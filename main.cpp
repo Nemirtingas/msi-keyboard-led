@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iterator>
 #include <vector>
+#include <fstream>
 
 #include <cstdint>
 #include <cstdlib>
@@ -11,13 +12,15 @@
 #include <cstring>
 
 #include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "keyboard.h"
 #include "utils.h"
 
+#define CONF_DIR  "/etc/msi-keyboard-manager"
+#define CONF_FILE CONF_DIR "/start.conf"
 #define FIFO_DIR  "/var/run/msi-keyboard-manager"
 #define FIFO_NAME FIFO_DIR "/cmd"
 
@@ -30,7 +33,7 @@ void signal_handler(int32_t param)
     end = true;
 }
 
-std::vector<std::string> parse_line( std::string const& line )
+std::vector<std::string> split_line( std::string const& line )
 {
     std::istringstream iss(line);
     return std::vector<std::string>(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>());
@@ -85,18 +88,29 @@ bool param_breathing( std::vector<std::string>::const_iterator &it, std::vector<
 {
     keyboard_led_manager::area area;
     if( ++it == endit )
+    {
+        std::cerr << "'breathing_mode' must have 4 parameters: (area) (start_color) (end_color) (color_speed)" << std::endl;
         return false;
+    }
 
     switchstr(*it)
     {
         casestr("left")  : area = keyboard_led_manager::area::left; break;
         casestr("right") : area = keyboard_led_manager::area::right; break;
         casestr("middle"): area = keyboard_led_manager::area::middle; break;
-        default: return false;
+        default: std::cerr << "'breathing_mode' 1st parameter (area) should be left, right or middle." << std::endl;return false;
     }
 
-    if( ++it == endit || it->at(0) != '#' || it->length() != 7 )
+    if( ++it == endit )
+    {
+        std::cerr << "'breathing_mode' must have 4 parameters: (area) (start_color) (end_color) (color_speed)" << std::endl;
         return false;
+    }
+    else if(it->at(0) != '#' || it->length() != 7)
+    {
+        std::cerr << "'breathing_mode' 2nd parameter should be the starting color formated like so: #RRGGBB." << std::endl;
+        return false;
+    }
 
     try
     {
@@ -107,8 +121,16 @@ bool param_breathing( std::vector<std::string>::const_iterator &it, std::vector<
         rcolor.g_start = static_cast<uint8_t>(color>>8);
         rcolor.b_start = static_cast<uint8_t>(color&0xFF);
 
-        if( ++it == endit || it->at(0) != '#' || it->length() != 7 )
+        if( ++it == endit )
+        {
+            std::cerr << "'breathing_mode' must have 4 parameters: (area) (start_color) (end_color) (color_speed)" << std::endl;
             return false;
+        }
+        else if(it->at(0) != '#' || it->length() != 7)
+        {
+            std::cerr << "'breathing_mode' 3rd parameter should be the ending color formated like so: #RRGGBB." << std::endl;
+            return false;
+        }
 
         color = std::stoi(it->c_str()+1, 0, 16);
 
@@ -117,7 +139,10 @@ bool param_breathing( std::vector<std::string>::const_iterator &it, std::vector<
         rcolor.b_end = static_cast<uint8_t>(color&0xFF);
 
         if( ++it == endit )
+        {
+            std::cerr << "'breathing_mode' must have 4 parameters: (area) (start_color) (end_color) (color_speed)" << std::endl;
             return false;
+        }
 
         rcolor.speed = static_cast<uint8_t>(std::stoi(*it));
 
@@ -126,6 +151,7 @@ bool param_breathing( std::vector<std::string>::const_iterator &it, std::vector<
     }
     catch( std::exception &e )
     {
+        std::cerr << "Error while parsing parameter: number contains non-numerical characters." << std::endl;
         return false;
     }
 }
@@ -134,18 +160,29 @@ bool param_wave( std::vector<std::string>::const_iterator &it, std::vector<std::
 {
     keyboard_led_manager::area area;
     if( ++it == endit )
+    {
+        std::cerr << "'wave_mode' must have 4 parameters: (area) (start_color) (end_color) (color_speed)" << std::endl;
         return false;
+    }
 
     switchstr(*it)
     {
         casestr("left")  : area = keyboard_led_manager::area::left; break;
         casestr("right") : area = keyboard_led_manager::area::right; break;
         casestr("middle"): area = keyboard_led_manager::area::middle; break;
-        default: return false;
+        default: std::cerr << "'wave_mode' 1st parameter (area) should be left, right or middle." << std::endl;return false;
     }
 
-    if( ++it == endit || it->at(0) != '#' || it->length() != 7 )
+    if( ++it == endit )
+    {
+        std::cerr << "'wave_mode' must have 4 parameters: (area) (start_color) (end_color) (color_speed)" << std::endl;
         return false;
+    }
+    else if(it->at(0) != '#' || it->length() != 7)
+    {
+        std::cerr << "'wave_mode' 2nd parameter should be the starting color formated like so: #RRGGBB." << std::endl;
+        return false;
+    }
 
     try
     {
@@ -156,8 +193,16 @@ bool param_wave( std::vector<std::string>::const_iterator &it, std::vector<std::
         rcolor.g_start = static_cast<uint8_t>(color>>8);
         rcolor.b_start = static_cast<uint8_t>(color&0xFF);
 
-        if( ++it == endit || it->at(0) != '#' || it->length() != 7 )
+        if( ++it == endit )
+        {
+            std::cerr << "'wave_mode' must have 4 parameters: (area) (start_color) (end_color) (color_speed)" << std::endl;
             return false;
+        }
+        else if(it->at(0) != '#' || it->length() != 7)
+        {
+            std::cerr << "'wave_mode' 3rd parameter should be the ending color formated like so: #RRGGBB." << std::endl;
+            return false;
+        }
 
         color = std::stoi(it->c_str()+1, 0, 16);
 
@@ -166,7 +211,10 @@ bool param_wave( std::vector<std::string>::const_iterator &it, std::vector<std::
         rcolor.b_end = static_cast<uint8_t>(color&0xFF);
 
         if( ++it == endit )
+        {
+            std::cerr << "'wave_mode' must have 4 parameters: (area) (start_color) (end_color) (color_speed)" << std::endl;
             return false;
+        }
 
         rcolor.speed = static_cast<uint8_t>(std::stoi(*it));
 
@@ -175,24 +223,43 @@ bool param_wave( std::vector<std::string>::const_iterator &it, std::vector<std::
     }
     catch( std::exception &e )
     {
+        std::cerr << "Error while parsing parameter: number contains non-numerical characters." << std::endl;
         return false;
+    }
+}
+
+bool parse_line( std::vector<std::string> const& params )
+{
+    bool ok = false;
+    std::vector<std::string>::const_iterator endit = params.cend();
+    for( std::vector<std::string>::const_iterator it = params.cbegin(); it != endit; ++it )
+    {
+        switchstr(*it)
+        {
+            casestr("brightness")    : ok = param_brightness(it, endit); break;
+            casestr("normal_mode")   : ok = param_normal    (it, endit); break;
+            casestr("breathing_mode"): ok = param_breathing (it, endit); break;
+            casestr("wave_mode")     : ok = param_wave      (it, endit); break;
+            default: ok = false; break;
+        }
+        if( !ok ) break;
+    }
+    return ok;
+}
+
+void read_conf_file()
+{
+    std::ifstream conf_file(CONF_FILE);
+    std::string line;
+    while( std::getline(conf_file, line) )
+    {
+        parse_line(move(split_line(line)));
     }
 }
 
 int main()
 {
     hid_init();
-
-    struct stat st;
-    memset(&st, 0, sizeof(struct stat));
-
-    if (stat(FIFO_DIR, &st) == -1)
-    {
-        if( mkdir(FIFO_DIR, 0755) == -1 )
-        {
-            std::cerr << "Can't make " FIFO_DIR " !" << std::endl;
-        }
-    }
 
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
@@ -208,7 +275,8 @@ int main()
             timeval timeout;
             std::array<char, 8192> buffer;
             size_t len;
-            std::vector<std::string> params;
+
+            read_conf_file();
 
             while( !end )
             {
@@ -221,34 +289,23 @@ int main()
                     len = read(fifofd, buffer.data(), 8191);
                     if( len > 0 )
                     {
-                        bool ok;
-                        params = move(parse_line(std::string(buffer.begin(), buffer.begin()+len)));
-                        std::vector<std::string>::const_iterator endit = params.cend();
-                        for( std::vector<std::string>::const_iterator it = params.cbegin(); it != endit; ++it )
+                        if( !parse_line(move(split_line(std::string(buffer.begin(), buffer.begin()+len)))) )
                         {
-                            switchstr(*it)
-                            {
-                                casestr("brightness")    : ok = param_brightness(it, endit); break;
-                                casestr("normal_mode")   : ok = param_normal    (it, endit); break;
-                                casestr("breathing_mode"): ok = param_breathing (it, endit); break;
-                                casestr("wave_mode")     : ok = param_wave      (it, endit); break;
-                                default: ok = false;
-                            }
-                            if( !ok )
-                            {
-                                break;
-                            }
                         }
                     }
                 }
             }
             close(fifofd);
         }
+        else
+        {
+            std::cerr << "Can't open command file " FIFO_NAME " !" << std::endl;
+        }
         unlink(FIFO_NAME);
     }
     else
     {
-        std::cerr << "Can't open " FIFO_NAME " !" << std::endl;
+        std::cerr << "Can't create command file " FIFO_NAME " !" << std::endl;
     }
 
     hid_exit();

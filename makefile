@@ -79,7 +79,7 @@ install: all
 	cp out/$(EXEC) /usr/sbin/$(EXEC)
 	cp out/$(EXEC).service /lib/systemd/system/$(EXEC).service
 	@[ -e /var/run/$(EXEC) ] || mkdir /var/run/$(EXEC)
-	chown $(SERVICE_USER):$(SERVICE_USER) /var/run/$(EXEC)
+	chown $(SERVICE_USER):$(SERVICE_USER) /var/run/$(EXEC) /usr/sbin/$(EXEC)
 	chmod 755 /var/run/$(EXEC)
 	@[ -e /etc/$(EXEC) ] || mkdir /etc/$(EXEC)
 	@[ -e /etc/$(EXEC)/start.conf ] || cp out/start.conf /etc/$(EXEC)/start.conf

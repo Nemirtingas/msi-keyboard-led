@@ -7,24 +7,26 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <csignal>
+#include <cstring>
 
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <csignal>
 
 #include "keyboard.h"
 #include "utils.h"
 
-#define FIFO_DIR  "/var/run/msi-keyboard/"
-#define FIFO_NAME FIFO_DIR "cmd"
+#define FIFO_DIR  "/var/run/msi-keyboard-manager"
+#define FIFO_NAME FIFO_DIR "/cmd"
 
 static bool end = false;
 static int32_t fifofd = -1;
 
 void signal_handler(int32_t param)
 {
+    (void)param;
     end = true;
 }
 
@@ -181,7 +183,8 @@ int main()
 {
     hid_init();
 
-    struct stat st = {0};
+    struct stat st;
+    memset(&st, 0, sizeof(struct stat));
 
     if (stat(FIFO_DIR, &st) == -1)
     {

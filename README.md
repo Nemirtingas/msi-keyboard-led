@@ -1,6 +1,7 @@
 Usage:
   Start msi-keyboard-manager as root.
 	You can manipulate your keyboard with the pipe file at /var/run/msi-keyboard-manager/cmd
+	You can put any recognized command into '/etc/msi-keyboad-manager/start.conf' to load values when the programm starts.
 
 Cmd:
 	Change keyboard brightness: 

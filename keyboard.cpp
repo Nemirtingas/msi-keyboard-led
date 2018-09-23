@@ -17,7 +17,7 @@ Si CMD ==
    1): AREA = <AREA>_RAMP_END  , dat1 = RED, dat2 = GREEN, dat3 = BLUE
    2): AREA = <AREA>_RAMP_START, dat1 = RED, dat2 = GREEN, dat3 = BLUE
    3): AREA = <AREA>_RAMP_SPEED, dat1 = RED SPEED, dat2 = GREEN SPEED, dat3 = BLUE SPEED (0 speed is 0.5sec)
-0x80 : AREA = brightness (5 -> 10)
+0x50 : AREA = brightness (5 -> 10)
 */
 
 #define BUFSIZE 8

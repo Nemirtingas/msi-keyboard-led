@@ -9,7 +9,7 @@ CXXCOMPFLAGS =
 CXXINCLUDES = 
 LIBRARIES = -lhidapi-libusb
 
-SERVICE_USER = msi-keyboard-manager
+SERVICE_USER = root
 
 KEYBOARD_SRC     = keyboard.cpp
 KEYBOARD_HEADERS = keyboard.h
@@ -36,6 +36,7 @@ all: $(OBJS)
 	@echo Making service file...
 	@$(MAKE) out/$(EXEC).service
 	@$(MAKE) out/start.conf
+	@$(MAKE) out/$(EXEC).conf
 	$(CXX) $(CXXCOMPFLAGS) $^ $(LIBRARIES) -o bin/$(EXEC) && strip bin/$(EXEC) -o out/$(EXEC)
  
 main.o: $(HEADERS)
@@ -74,10 +75,21 @@ out/start.conf:
 normal_mode middle #00FF00\\n\
 normal_mode right  #0000FF" >$@
 
+out/$(EXEC).conf:
+	@[ -e out ] || mkdir out
+	@echo \
+"# See tmpfiles.d(5) for details\\n\
+\\n\
+# Make sure these are created by default so that nobody else can\\n\
+# or empty them at startup\\n\
+D! /var/run/msi-keyboard-led 700 root root" >$@
+
+
 install: all
 	grep -q "^$(SERVICE_USER)" /etc/passwd || useradd -r -M -s /usr/sbin/nologin -d /var/run/$(EXEC) $(SERVICE_USER)
 	cp out/$(EXEC) /usr/sbin/$(EXEC)
 	cp out/$(EXEC).service /lib/systemd/system/$(EXEC).service
+	cp out/$(EXEC).conf /usr/lib/tmpfiles.d/$(EXEC).conf
 	@[ -e /var/run/$(EXEC) ] || mkdir /var/run/$(EXEC)
 	chown $(SERVICE_USER):$(SERVICE_USER) /var/run/$(EXEC) /usr/sbin/$(EXEC)
 	chmod 755 /var/run/$(EXEC)

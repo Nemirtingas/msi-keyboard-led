@@ -82,7 +82,7 @@ out/$(EXEC).conf:
 \\n\
 # Make sure these are created by default so that nobody else can\\n\
 # or empty them at startup\\n\
-D! /var/run/msi-keyboard-led 700 root root" >$@
+D! /var/run/$(EXEC) 700 root root" >$@
 
 
 install: all
